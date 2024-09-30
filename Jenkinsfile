@@ -9,7 +9,7 @@ pipeline {
     stages {
         stage('Clone Repository') {
             steps {
-                git 'https://github.com/davidkapcsandi/monitoring.git'
+                git branch: 'main', url: 'https://github.com/davidkapcsandi/monitoring.git'
             }
         }
 
@@ -21,15 +21,16 @@ pipeline {
 
         stage('Apply Terraform') {
             steps {
-                // Export the AWS environment variables for Terraform to use
-                sh '''
-                    export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
-                    export AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
-                '''
-                
-                // Run Terraform commands
-                sh 'terraform init'
-                sh 'terraform apply -auto-approve'
+                withCredentials([string(credentialsId: 'AWS_ACCESS_KEY_ID', variable: 'AWS_ACCESS_KEY_ID'),
+                                 string(credentialsId: 'AWS_SECRET_ACCESS_KEY', variable: 'AWS_SECRET_ACCESS_KEY')]) {
+                    sh '''
+                        export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
+                        export AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
+
+                        terraform init
+                        terraform apply -auto-approve
+                    '''
+                }
             }
         }
     }
