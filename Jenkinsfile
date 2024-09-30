@@ -1,6 +1,11 @@
 pipeline {
     agent any
 
+    environment {
+        AWS_ACCESS_KEY_ID = credentials('AWS_ACCESS_KEY_ID')   // AWS Access Key stored in Jenkins credentials
+        AWS_SECRET_ACCESS_KEY = credentials('AWS_SECRET_ACCESS_KEY') // AWS Secret Key stored in Jenkins credentials
+    }
+
     stages {
         stage('Clone Repository') {
             steps {
@@ -16,15 +21,12 @@ pipeline {
 
         stage('Apply Terraform') {
             steps {
-                // Access AWS Credentials securely
-                withCredentials([usernamePassword(credentialsId: 'bf23481a-9111-4c5a-b2bc-95a6ddd7d2b4', usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY')]) {
-                    // Now AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY are available as environment variables
-                    sh '''
-                    echo "Using AWS Access Key: $AWS_ACCESS_KEY_ID"
-                    aws s3 ls # Replace this with your actual AWS CLI command
-                    '''
-                }
-
+                // Export the AWS environment variables for Terraform to use
+                sh '''
+                    export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
+                    export AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
+                '''
+                
                 // Run Terraform commands
                 sh 'terraform init'
                 sh 'terraform apply -auto-approve'
